@@ -60,7 +60,7 @@ if [ $# -eq 0 ]
 then
 	for i in $(ls ~/.butterback/targets/)
 	do
-		whole_shabang "$i" "$HOME/.butterback/root/" "$HOME/.butterback/targets/$i/"
+		whole_shabang "$i" "/etc/butterback/root/" "/etc/butterback/targets/$i/"
 		
 	done
 elif [ $# -eq 3 ]
