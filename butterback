@@ -58,7 +58,7 @@ whole_shabang()
 
 if [ $# -eq 0 ]
 then
-	for i in $(ls ~/.butterback/targets/)
+	for i in $(ls /etc/butterback/targets/)
 	do
 		whole_shabang "$i" "/etc/butterback/root/" "/etc/butterback/targets/$i/"
 		
