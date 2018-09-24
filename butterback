@@ -42,7 +42,7 @@ backup()
 	root=$2
 	source=$3
 	
-	rsync -a --delete "$source/" "$root/$name/current/"
+	rsync -a --delete --progress "$source/" "$root/$name/current/"
 }
 
 whole_shabang()
