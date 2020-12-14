@@ -1,72 +1,49 @@
-#! /bin/bash
+#! /usr/bin/python3
 
-# Copyright © 2015 Vladimir Olteanu <vl.olteanu@gmail.com>
+# Copyright © 2015-2020 Vladimir Olteanu <vl.olteanu@gmail.com>
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
 # and/or modify it under the terms of the Do What The Fuck You Want
 # To Public License, Version 2, as published by Sam Hocevar. See
 # the COPYING file for more details.
 
-set -e
+import os
+import sys
+import getopt
 
-DATE_FMT="%Y-%m-%d-%T"
+DATE_FMT = "%Y-%m-%d-%T"
 
-sanity()
-{
-	name=$1
-	root=$2
+def exec(cmd):
+	rc = os.system(cmd)
+	if (rc != 0):
+		raise Exception('Error running command "{}": {}'.format(cmd, rc))
+
+def sanity(name, root):
+	if (not os.path.isdir(root + '/' + name)):
+		exec('mkdir "{}/{}/"'.format(root, name))
 	
-	if [ ! -d "$root/$name/" ]
-	then
-		mkdir "$root/$name/"
-        fi
-	
-	if [ ! -d "$root/$name/current" ]
-	then
-		btrfs subvolume create "$root/$name/current/"
-	fi
-	return 0
-}
+	if (not os.path.isdir(root + '/' + name + '/current')):
+		exec('btrfs subvolume create "${}/${}/current/"'.format(root, name))
 
-snapshot()
-{
-	name=$1
-	root=$2
-	
-	btrfs subvolume snapshot "$root/$name/current/" "$root/$name/$(date +"$DATE_FMT")/"
-}
+def snapshot(name, root):
+	exec('btrfs subvolume snapshot "{0}/{1}/current/" "{0}/{1}/$(date +"{2}")/"'.format(root, name, DATE_FMT))
 
-backup()
-{
-	name=$1
-	root=$2
-	source=$3
-	
-	rsync -a --delete --progress "$source/" "$root/$name/current/"
-}
+def backup(name, root, source):
+	exec('rsync -a --delete --progress "{0}/" "{1}/{2}/current/"'.format(source, root, name))
 
-whole_shabang()
-{
-	name=$1
-	root=$2
-	source=$3
-	
-	sanity $name $root
-	backup $name $root $source
-	snapshot $name $root
-}
+def whole_shabang(name, root, source):
+	sanity(name, root)
+	backup(name, root, source)
+	snapshot(name, root)
 
-if [ $# -eq 0 ]
-then
-	for i in $(ls /etc/butterback/targets/)
-	do
-		whole_shabang "$i" "/etc/butterback/root/" "/etc/butterback/targets/$i/"
-		
-	done
-elif [ $# -eq 3 ]
-then
-	whole_shabang "$1" "$2" "$3"
-fi
+def main(argv):
+	if (len(argv) == 0):
+		for i in os.listdir('/etc/butterback/targets'):
+			whole_shabang(i, '/etc/butterback/root/', '/etc/butterback/targets/{}/'.format(i))
+	elif (len(argv) == 3):
+		whole_shabang(argv[0], argv[1], argv[2])
 
-echo Done
+if __name__ == "__main__":
+	main(sys.argv[1:])
 
+print('Done')
