@@ -62,15 +62,18 @@ class LocalHost(Host):
 
 class RemoteHost(Host):
 	def __init__(self, user, host):
+		if (host == ''):
+			raise Exception('Empty hostname');
 		self.user = user
 		self.host = host
+		
+	def ssh_host(self):
+		if (self.user == ''):
+			return self.host
+		return self.user + '@' + self.host
 	
 	def run(self, cmd):
-		if (user == ''):
-			ssh_host = host
-		else:
-			ssh_host = self.user + '@' + self.host
-		exec(['ssh', ssh_host] + cmd)
+		exec(['ssh', self.ssh_host()] + cmd)
 	
 	def is_dir(self, path):
 		try:
@@ -80,12 +83,14 @@ class RemoteHost(Host):
 		return True
 		
 	def rsync_pref(self):
-		return self.user + '@' + self.passwd + ':'
+		return self.ssh_host() + ':'
 
 def separate_host(str):
-	str_tokens = string.split(':')
-	if (len(str_tokens == 1)):
+	str_tokens = str.split(':')
+	if (len(str_tokens) == 1):
 		return [LocalHost(), str]
+	elif (len(str_tokens) > 2):
+		raise Exception('Bad root: ' + str)
 	full_host = str_tokens[0]
 	root = str_tokens[1]
 	
@@ -93,9 +98,11 @@ def separate_host(str):
 	if (len(host_tokens) == 1):
 		user = ''
 		host = full_host
+	elif (len(host_tokens) > 2):
+		raise Exception('Bad root: ' + str)
 	else:
-		user = tokens[0]
-		host = tokens[1]
+		user = host_tokens[0]
+		host = host_tokens[1]
 	
 	return [RemoteHost(user, host), root]
 
@@ -119,19 +126,22 @@ def main(argv):
 		
 		for i in os.listdir('/etc/butterback/targets'):
 			host.backup('/etc/butterback/root/', i, '/etc/butterback/targets/{}/'.format(i))
+	elif (len(argv) == 1):
+		usage()
 	else:
+		[host, root] = separate_host(argv[1])
 		if (argv[0] == 'backup'):
 			if (len(argv) != 4):
 				usage()
-			LocalHost().backup(argv[1], argv[2], argv[3])
+			host.backup(root, argv[2], argv[3])
 		elif (argv[0] == 'list'):
 			if (len(argv) != 3):
 				usage()
-			LocalHost().list(argv[1], argv[2])
+			host.list(root, argv[2])
 		elif (argv[0] == 'restore'):
 			if (len(argv) != 5):
 				usage()
-			LocalHost().restore(argv[1], argv[2], argv[3], argv[4])
+			host.restore(root, argv[2], argv[3], argv[4])
 		else:
 			usage()
 
