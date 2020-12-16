@@ -13,18 +13,18 @@ import getopt
 import subprocess
 
 CONFIG_PATH = '/etc/butterback/'
-ROOT_PATH = CONFIG_PATH + 'root'
+ROOT_PATH   = CONFIG_PATH + 'root'
 TARGET_PATH = CONFIG_PATH + "targets/"
+DATE_FMT    = "%Y-%m-%d-%T"
 
 def exec(cmd):
 	print(cmd)
 	subprocess.run(cmd, check = True)
 
 def date():
-	DATE_FMT = "%Y-%m-%d-%T"
-	
 	raw_date = subprocess.check_output(['date', '+' + DATE_FMT])
 	raw_date = raw_date[:len(raw_date) - 1] #strip \n
+	
 	return raw_date.decode("utf-8")
 
 class Host:
@@ -35,8 +35,8 @@ class Host:
 			self.run(['mkdir', root + '/' + name])
 		
 		current_path = root + '/' + name + '/current'
-		if (not self.is_dir(root + '/' + name + '/current')):
-			self.run(['sudo', 'btrfs',  'subvolume',  'create', root + '/' + name + '/current'])
+		if (not self.is_dir(current_path)):
+			self.run(['sudo', 'btrfs',  'subvolume',  'create', current_path])
 		
 		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
 	
@@ -45,14 +45,12 @@ class Host:
 		
 	def list(self, root, name):
 		self.run(['ls', '-1', root + '/' + name])
-		return None
 	
 	def restore(self, root, name, revision, destination):
 		if (not self.is_dir(destination)):
 			self.run(['mkdir', '-p', destination])
 		source = self.rsync_pref() + root + '/' + name + '/' + revision
 		exec(['rsync',  '-a',  '--delete',  '--progress', source, destination])
-		return None
 		
 class LocalHost(Host):
 	def run(self, cmd):
@@ -95,6 +93,7 @@ def separate_host(str):
 		return [LocalHost(), str]
 	elif (len(str_tokens) > 2):
 		raise Exception('Bad root: ' + str)
+	
 	full_host = str_tokens[0]
 	root = str_tokens[1]
 	
@@ -110,40 +109,48 @@ def separate_host(str):
 	
 	return [RemoteHost(user, host), root]
 
-def usage():
+def usage(rc = 1):
 	print('Usage: butterback <command> <command args>')
 	print('\t' + 'backup <root> <name> <source>')
 	print('\t' + 'list <root> <name>')
 	print('\t' + 'restore <root> <name> <revision> <destination>')
-	exit(1)
+	print('\t' + 'auto')
+	print('\t' + 'help')
+	sys.exit(rc)
 	
 def main(argv):
 	if (len(argv) == 0):
-		if (os.path.isdir(ROOT_PATH)):
-			host = LocalHost()
-			root = ROOT_PATH
-		else:
-			file = open(ROOT_PATH)
-			lines = file.readlines()
-			file.close()
-			
-			if (len(lines) == 0):
-				raise Exception("Bad root file format")
-			for i in range(1, len(lines)):
-				if (not lines[i].isspace()):
-					raise Exception("Bad root file format")
-			
-			full_host = lines[0]
-			full_host = full_host[:len(full_host) - 1] #strip \n
-			
-			[host, root] = separate_host(full_host)
-		
-		for i in os.listdir(TARGET_PATH):
-			host.backup(root, i, TARGET_PATH + i)
-	elif (len(argv) == 1):
 		usage()
+	elif (len(argv) == 1):
+		if (argv[0] == 'auto'):
+			if (os.path.isdir(ROOT_PATH)):
+				host = LocalHost()
+				root = ROOT_PATH
+			else:
+				file = open(ROOT_PATH)
+				lines = file.readlines()
+				file.close()
+				
+				if (len(lines) == 0):
+					raise Exception("Bad root file format")
+				for i in range(1, len(lines)):
+					if (not lines[i].isspace()):
+						raise Exception("Bad root file format")
+				
+				full_host = lines[0]
+				full_host = full_host[:len(full_host) - 1] #strip \n
+				
+				[host, root] = separate_host(full_host)
+			
+			for i in os.listdir(TARGET_PATH):
+				host.backup(root, i, TARGET_PATH + i)
+		elif (argv[0] == 'help'):
+			usage(0)
+		else:
+			usage()
 	else:
 		[host, root] = separate_host(argv[1])
+		
 		if (argv[0] == 'backup'):
 			if (len(argv) != 4):
 				usage()
