@@ -63,14 +63,14 @@ class LocalHost(Host):
 
 class RemoteHost(Host):
 	def __init__(self, user, host):
+		if (user == ''):
+			raise Exception('Empty username');
 		if (host == ''):
 			raise Exception('Empty hostname');
 		self.user = user
 		self.host = host
 		
 	def ssh_host(self):
-		if (self.user == ''):
-			return self.host
 		return self.user + '@' + self.host
 	
 	def run(self, cmd):
@@ -97,10 +97,7 @@ def separate_host(str):
 	root = str_tokens[1]
 	
 	host_tokens = full_host.split('@')
-	if (len(host_tokens) == 1):
-		user = ''
-		host = full_host
-	elif (len(host_tokens) > 2):
+	elif (len(host_tokens) != 2):
 		raise Exception('Bad root: ' + str)
 	else:
 		user = host_tokens[0]
