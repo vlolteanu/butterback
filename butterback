@@ -20,11 +20,14 @@ def exec(cmd):
 	print(cmd)
 	subprocess.run(cmd, check = True)
 
-def date():
-	raw_date = subprocess.check_output(['date', '+' + DATE_FMT])
-	raw_date = raw_date[:len(raw_date) - 1] #strip \n
+def get_oneline_output(cmd):
+	raw_out = subprocess.check_output(cmd)
+	raw_out = raw_out[:len(raw_out) - 1] #strip \n
 	
-	return raw_date.decode("utf-8")
+	return raw_out.decode("utf-8")
+
+def date():
+	return get_oneline_output(['date', '+' + DATE_FMT])
 
 class Host:
 	def backup(self, root, name, source):
@@ -70,10 +73,10 @@ class LocalHost(Host):
 
 class RemoteHost(Host):
 	def __init__(self, user, host):
-		if (user == ''):
-			raise Exception('Empty username');
 		if (host == ''):
 			raise Exception('Empty hostname');
+		if (user == ''):
+			user = get_oneline_output(['ssh', host, 'whoami'])
 		self.user = user
 		self.host = host
 		
@@ -110,11 +113,14 @@ def separate_host(str):
 	root = str_tokens[1]
 	
 	host_tokens = full_host.split('@')
-	if (len(host_tokens) != 2):
+	if (len(host_tokens) > 2):
 		raise Exception('Bad root: ' + str)
-	
-	user = host_tokens[0]
-	host = host_tokens[1]
+	if (len(host_tokens) == 1):
+		user = ''
+		host = host_tokens[0]
+	else:
+		user = host_tokens[0]
+		host = host_tokens[1]
 	
 	return [RemoteHost(user, host), root]
 
