@@ -9,7 +9,6 @@
 
 import os
 import sys
-import getopt
 import subprocess
 
 CONFIG_PATH = '/etc/butterback/'
