@@ -35,12 +35,13 @@ class Host:
 		
 		current_path = root + '/' + name + '/current'
 		if (not self.is_dir(current_path)):
-			self.run(['sudo', 'btrfs', 'subvolume', 'create', current_path])
+			self.run_root(['btrfs', 'subvolume', 'create', current_path])
+			self.run_root(['chown', self.get_user(), current_path])
 		
 		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
 	
 		snap_path = root + '/' + name + '/' + date()
-		self.run(['sudo', 'btrfs', 'subvolume', 'snapshot', current_path, snap_path])
+		self.run_root(['btrfs', 'subvolume', 'snapshot', current_path, snap_path])
 		
 	def list(self, root, name):
 		self.run(['ls', '-1', root + '/' + name])
@@ -55,8 +56,14 @@ class LocalHost(Host):
 	def run(self, cmd):
 		exec(cmd)
 	
+	def run_root(self, cmd):
+		exec(['sudo'] + cmd)
+	
 	def is_dir(self, path):
 		return os.path.isdir(path)
+	
+	def get_user(self):
+		return os.getusername()
 	
 	def rsync_pref(self):
 		return ''
@@ -76,12 +83,18 @@ class RemoteHost(Host):
 	def run(self, cmd):
 		exec(['ssh', self.ssh_host()] + cmd)
 	
+	def run_root(self, cmd):
+		exec(['ssh', 'root@' + self.host] + cmd)
+	
 	def is_dir(self, path):
 		try:
 			self.run(['[ -d "{}" ]'.format(path)])
 		except:
 			return False
 		return True
+	
+	def get_user(self):
+		return self.user
 		
 	def rsync_pref(self):
 		return self.ssh_host() + ':'
@@ -97,11 +110,11 @@ def separate_host(str):
 	root = str_tokens[1]
 	
 	host_tokens = full_host.split('@')
-	elif (len(host_tokens) != 2):
+	if (len(host_tokens) != 2):
 		raise Exception('Bad root: ' + str)
-	else:
-		user = host_tokens[0]
-		host = host_tokens[1]
+	
+	user = host_tokens[0]
+	host = host_tokens[1]
 	
 	return [RemoteHost(user, host), root]
 
