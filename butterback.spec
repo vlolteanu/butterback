@@ -16,17 +16,18 @@
 #
 
 Name:           butterback
-Version:        9834025c25c180a09e8ad57bcdd1db2c09032734
-Release:        0
+Version:        6c22ee673a8cef07525665d4adc51fd000264b83
+Release:        1
 License:        WTFPLv2
 Summary:        Simple backup tool using BtrFS
 Url:            https://github.com/vlolteanu/butterback
-Source0:        butterback-9834025c25c180a09e8ad57bcdd1db2c09032734.tar.gz
+Source0:        butterback-6c22ee673a8cef07525665d4adc51fd000264b83.tar.gz
 
 Requires:       bash
 Requires:       coreutils
 Requires:       btrfsprogs
 Requires:       rsync
+Requires:       python3
 
 %description
 
