@@ -1,7 +1,7 @@
 #
 # spec file for package butterback
 #
-# Copyright (c) 2016-2018 Vladimir Olteanu <vl.olteanu@gmail.com>
+# Copyright (c) 2016-2020 Vladimir Olteanu <vl.olteanu@gmail.com>
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
