@@ -35,7 +35,7 @@ class Host:
 		
 		current_path = root + '/' + name + '/current'
 		if (not self.is_dir(current_path)):
-			self.run(['sudo', 'btrfs',  'subvolume',  'create', current_path])
+			self.run(['sudo', 'btrfs', 'subvolume', 'create', current_path])
 		
 		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
 	
@@ -49,7 +49,7 @@ class Host:
 		if (not self.is_dir(destination)):
 			self.run(['mkdir', '-p', destination])
 		source = self.rsync_pref() + root + '/' + name + '/' + revision
-		exec(['rsync',  '-a',  '--delete',  '--progress', source, destination])
+		exec(['rsync',  '-a', '--delete', '--progress', source, destination])
 		
 class LocalHost(Host):
 	def run(self, cmd):
