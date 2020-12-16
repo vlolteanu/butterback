@@ -66,7 +66,7 @@ class LocalHost(Host):
 		return os.path.isdir(path)
 	
 	def get_user(self):
-		return os.getusername()
+		return get_oneline_output(['whoami'])
 	
 	def rsync_pref(self):
 		return ''
