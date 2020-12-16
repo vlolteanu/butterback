@@ -10,38 +10,68 @@
 import os
 import sys
 import getopt
-
-DATE_FMT = "%Y-%m-%d-%T"
+import subprocess
 
 def exec(cmd):
-	rc = os.system(cmd)
-	if (rc != 0):
-		raise Exception('Error running command "{}": {}'.format(cmd, rc))
+ 	subprocess.run(cmd, check = True)
 
-def sanity(name, root):
-	if (not os.path.isdir(root + '/' + name)):
-		exec('mkdir "{}/{}/"'.format(root, name))
+def date():
+	DATE_FMT = "%Y-%m-%d-%T"
 	
-	if (not os.path.isdir(root + '/' + name + '/current')):
-		exec('btrfs subvolume create "${}/${}/current/"'.format(root, name))
+	raw_date = subprocess.check_output(['date', '+' + DATE_FMT])
+	raw_date = raw_date[:len(raw_date) - 1] #strip \n
+	return raw_date.decode("utf-8")
 
-def snapshot(name, root):
-	exec('btrfs subvolume snapshot "{0}/{1}/current/" "{0}/{1}/$(date +"{2}")/"'.format(root, name, DATE_FMT))
+class Host:
+	def backup(self, name, root, source):
+		if (not self.is_dir(root)):
+			self.run(['mkdir', 'root'])
+		if (not self.is_dir(root + '/' + name)):
+			self.run(['mkdir', 'root' + '/' + 'name'])
+		
+		current_path = root + '/' + name + '/current'
+		if (not self.is_dir(root + '/' + name + '/current')):
+			self.run(['sudo', 'btrfs',  'subvolume',  'create', root + '/' + name + '/current'])
+		
+		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
+	
+		snap_path = root + '/' + name + '/' + date()
+		self.run(['sudo', 'btrfs', 'subvolume', 'snapshot', current_path, snap_path])
+		
+class LocalHost(Host):
+	def run(self, cmd):
+		exec(cmd)
+	
+	def is_dir(self, path):
+		return os.path.isdir(path)
+	
+	def rsync_pref(self):
+		return ''
 
-def backup(name, root, source):
-	exec('rsync -a --delete --progress "{0}/" "{1}/{2}/current/"'.format(source, root, name))
-
-def whole_shabang(name, root, source):
-	sanity(name, root)
-	backup(name, root, source)
-	snapshot(name, root)
+class RemoteHost(Host):
+	def __init__(self, user, passwd):
+		self.user = user
+		self.passwd = passwd
+	
+	def run(self, cmd):
+		exec(['ssh', self.user + '@' + self.passwd] + cmd)
+	
+	def is_dir(self, path):
+		try:
+			self.run(['[ -d "{}" ]'.format(self.path)])
+		except:
+			return False
+		return True
+		
+	def rsync_pref(self):
+		return self.user + '@' + self.passwd + ':'
 
 def main(argv):
 	if (len(argv) == 0):
 		for i in os.listdir('/etc/butterback/targets'):
-			whole_shabang(i, '/etc/butterback/root/', '/etc/butterback/targets/{}/'.format(i))
+			LocalHost().backup(i, '/etc/butterback/root/', '/etc/butterback/targets/{}/'.format(i))
 	elif (len(argv) == 3):
-		whole_shabang(argv[0], argv[1], argv[2])
+		LocalHost().backup(argv[0], argv[1], argv[2])
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
