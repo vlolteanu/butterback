@@ -78,7 +78,7 @@ class RemoteHost(Host):
 	
 	def is_dir(self, path):
 		try:
-			self.run(['[ -d "{}" ]'.format(self.path)])
+			self.run(['[ -d "{}" ]'.format(path)])
 		except:
 			return False
 		return True
