@@ -13,7 +13,8 @@ import getopt
 import subprocess
 
 def exec(cmd):
- 	subprocess.run(cmd, check = True)
+	print(cmd)
+#	subprocess.run(cmd, check = True)
 
 def date():
 	DATE_FMT = "%Y-%m-%d-%T"
@@ -23,11 +24,11 @@ def date():
 	return raw_date.decode("utf-8")
 
 class Host:
-	def backup(self, name, root, source):
+	def backup(self, root, name, source):
 		if (not self.is_dir(root)):
-			self.run(['mkdir', 'root'])
+			self.run(['mkdir', root])
 		if (not self.is_dir(root + '/' + name)):
-			self.run(['mkdir', 'root' + '/' + 'name'])
+			self.run(['mkdir', root + '/' + name])
 		
 		current_path = root + '/' + name + '/current'
 		if (not self.is_dir(root + '/' + name + '/current')):
@@ -37,6 +38,17 @@ class Host:
 	
 		snap_path = root + '/' + name + '/' + date()
 		self.run(['sudo', 'btrfs', 'subvolume', 'snapshot', current_path, snap_path])
+		
+	def list(self, root, name):
+		self.run(['ls', '-1', root + '/' + name])
+		return None
+	
+	def restore(self, root, name, revision, destination):
+		if (not self.is_dir(destination)):
+			self.run(['mkdir', '-p', destination])
+		source = self.rsync_pref() + root + '/' + name + '/' + revision
+		exec(['rsync',  '-a',  '--delete',  '--progress', source, destination])
+		return None
 		
 class LocalHost(Host):
 	def run(self, cmd):
@@ -49,12 +61,16 @@ class LocalHost(Host):
 		return ''
 
 class RemoteHost(Host):
-	def __init__(self, user, passwd):
+	def __init__(self, user, host):
 		self.user = user
-		self.passwd = passwd
+		self.host = host
 	
 	def run(self, cmd):
-		exec(['ssh', self.user + '@' + self.passwd] + cmd)
+		if (user == ''):
+			ssh_host = host
+		else:
+			ssh_host = self.user + '@' + self.host
+		exec(['ssh', ssh_host] + cmd)
 	
 	def is_dir(self, path):
 		try:
@@ -66,14 +82,58 @@ class RemoteHost(Host):
 	def rsync_pref(self):
 		return self.user + '@' + self.passwd + ':'
 
+def separate_host(str):
+	str_tokens = string.split(':')
+	if (len(str_tokens == 1)):
+		return [LocalHost(), str]
+	full_host = str_tokens[0]
+	root = str_tokens[1]
+	
+	host_tokens = full_host.split('@')
+	if (len(host_tokens) == 1):
+		user = ''
+		host = full_host
+	else:
+		user = tokens[0]
+		host = tokens[1]
+	
+	return [RemoteHost(user, host), root]
+
+def usage():
+	print('Usage: butterback <command> <command args>')
+	print('\t' + 'backup <root> <name> <source>')
+	print('\t' + 'list <root> <name>')
+	print('\t' + 'restore <root> <name> <revision> <destination>')
+	exit(1)
+	
 def main(argv):
 	if (len(argv) == 0):
+		ROOT_PATH = '/etc/butterback/root/'
+		
+		if (os.path.isdir(ROOT_PATH)):
+			host = LocalHost()
+			root = ROOT_PATH
+		else:
+			#TODO
+			host = None
+		
 		for i in os.listdir('/etc/butterback/targets'):
-			LocalHost().backup(i, '/etc/butterback/root/', '/etc/butterback/targets/{}/'.format(i))
-	elif (len(argv) == 3):
-		LocalHost().backup(argv[0], argv[1], argv[2])
+			host.backup('/etc/butterback/root/', i, '/etc/butterback/targets/{}/'.format(i))
+	else:
+		if (argv[0] == 'backup'):
+			if (len(argv) != 4):
+				usage()
+			LocalHost().backup(argv[1], argv[2], argv[3])
+		elif (argv[0] == 'list'):
+			if (len(argv) != 3):
+				usage()
+			LocalHost().list(argv[1], argv[2])
+		elif (argv[0] == 'restore'):
+			if (len(argv) != 5):
+				usage()
+			LocalHost().restore(argv[1], argv[2], argv[3], argv[4])
+		else:
+			usage()
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
-
-print('Done')
