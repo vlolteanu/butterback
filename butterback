@@ -12,6 +12,10 @@ import sys
 import getopt
 import subprocess
 
+CONFIG_PATH = '/etc/butterback/'
+ROOT_PATH = CONFIG_PATH + 'root'
+TARGET_PATH = CONFIG_PATH + "targets/"
+
 def exec(cmd):
 	print(cmd)
 #	subprocess.run(cmd, check = True)
@@ -115,17 +119,27 @@ def usage():
 	
 def main(argv):
 	if (len(argv) == 0):
-		ROOT_PATH = '/etc/butterback/root/'
-		
 		if (os.path.isdir(ROOT_PATH)):
 			host = LocalHost()
 			root = ROOT_PATH
 		else:
-			#TODO
-			host = None
+			file = open(ROOT_PATH)
+			lines = file.readlines()
+			file.close()
+			
+			if (len(lines) == 0):
+				raise Exception("Bad root file format")
+			for i in range(1, len(lines)):
+				if (not lines[i].isspace()):
+					raise Exception("Bad root file format")
+			
+			full_host = lines[0]
+			full_host = full_host[:len(full_host) - 1] #strip \n
+			
+			[host, root] = separate_host(full_host)
 		
-		for i in os.listdir('/etc/butterback/targets'):
-			host.backup('/etc/butterback/root/', i, '/etc/butterback/targets/{}/'.format(i))
+		for i in os.listdir(TARGET_PATH):
+			host.backup(root, i, TARGET_PATH + i)
 	elif (len(argv) == 1):
 		usage()
 	else:
