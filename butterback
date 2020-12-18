@@ -30,7 +30,7 @@ def date():
 	return get_oneline_output(['date', '+' + DATE_FMT])
 
 class Host:
-	def backup(self, dest, source):
+	def backup(self, source, dest):
 		if (not self.is_dir(dest)):
 			self.run(['mkdir', '-p', dest])
 		
@@ -139,7 +139,7 @@ def parse_root_file(path):
 
 def usage(rc = 1):
 	print('Usage: butterback <command> <command args>')
-	print('\t' + 'backup <destination> <source>')
+	print('\t' + 'backup <source> <destination> ')
 	print('\t' + 'restore <source> <destination>')
 	print('\t' + 'auto')
 	print('\t' + 'help')
@@ -154,22 +154,22 @@ def main(argv):
 			[host, root] = parse_root_file(ROOT_PATH)
 			
 			for i in os.listdir(TARGET_PATH):
-				host.backup(root + '/' + i, TARGET_PATH + i)
+				host.backup(TARGET_PATH + i, root + '/' + i)
 		elif (argv[0] == 'help'):
 			usage(0)
 		else:
 			usage()
 	else:
-		[host, path] = separate_host(argv[1])
-		
 		if (argv[0] == 'backup'):
 			if (len(argv) != 3):
 				usage()
-			host.backup(path, argv[2])
+			[host, dest] = separate_host(argv[2])
+			host.backup(argv[1], dest)
 		elif (argv[0] == 'restore'):
 			if (len(argv) != 3):
 				usage()
-			host.restore(path, argv[2])
+			[host, source] = separate_host(argv[1])
+			host.restore(source, argv[2])
 		else:
 			usage()
 
