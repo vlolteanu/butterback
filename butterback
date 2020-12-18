@@ -31,10 +31,8 @@ def date():
 
 class Host:
 	def backup(self, root, name, source):
-		if (not self.is_dir(root)):
-			self.run(['mkdir', root])
 		if (not self.is_dir(root + '/' + name)):
-			self.run(['mkdir', root + '/' + name])
+			self.run(['mkdir', '-p', root + '/' + name])
 		
 		current_path = root + '/' + name + '/current'
 		if (not self.is_dir(current_path)):
