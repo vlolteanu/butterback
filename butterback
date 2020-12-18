@@ -30,27 +30,23 @@ def date():
 	return get_oneline_output(['date', '+' + DATE_FMT])
 
 class Host:
-	def backup(self, root, name, source):
-		if (not self.is_dir(root + '/' + name)):
-			self.run(['mkdir', '-p', root + '/' + name])
+	def backup(self, dest, source):
+		if (not self.is_dir(dest)):
+			self.run(['mkdir', '-p', dest])
 		
-		current_path = root + '/' + name + '/current'
+		current_path = dest + '/current'
 		if (not self.is_dir(current_path)):
 			self.run_root(['btrfs', 'subvolume', 'create', current_path])
 			self.run_root(['chown', self.get_user(), current_path])
 		
 		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
 	
-		snap_path = root + '/' + name + '/' + date()
+		snap_path = dest + '/' + date()
 		self.run_root(['btrfs', 'subvolume', 'snapshot', current_path, snap_path])
 		
-	def list(self, root, name):
-		self.run(['ls', '-1', root + '/' + name])
-	
-	def restore(self, root, name, revision, dest):
+	def restore(self, source, dest):
 		if (not self.is_dir(dest)):
 			self.run(['mkdir', '-p', dest])
-		source = self.rsync_pref() + root + '/' + name + '/' + revision
 		exec(['rsync',  '-a', '--delete', '--progress', source, dest])
 		
 class LocalHost(Host):
@@ -143,9 +139,8 @@ def parse_root_file(path):
 
 def usage(rc = 1):
 	print('Usage: butterback <command> <command args>')
-	print('\t' + 'backup <root> <name> <source>')
-	print('\t' + 'list <root> <name>')
-	print('\t' + 'restore <root> <name> <revision> <destination>')
+	print('\t' + 'backup <destination> <source>')
+	print('\t' + 'restore <source> <destination>')
 	print('\t' + 'auto')
 	print('\t' + 'help')
 	
@@ -159,26 +154,22 @@ def main(argv):
 			[host, root] = parse_root_file(ROOT_PATH)
 			
 			for i in os.listdir(TARGET_PATH):
-				host.backup(root, i, TARGET_PATH + i)
+				host.backup(root + '/' + i, TARGET_PATH + i)
 		elif (argv[0] == 'help'):
 			usage(0)
 		else:
 			usage()
 	else:
-		[host, root] = separate_host(argv[1])
+		[host, path] = separate_host(argv[1])
 		
 		if (argv[0] == 'backup'):
-			if (len(argv) != 4):
-				usage()
-			host.backup(root, argv[2], argv[3])
-		elif (argv[0] == 'list'):
 			if (len(argv) != 3):
 				usage()
-			host.list(root, argv[2])
+			host.backup(path, argv[2])
 		elif (argv[0] == 'restore'):
-			if (len(argv) != 5):
+			if (len(argv) != 3):
 				usage()
-			host.restore(root, argv[2], argv[3], argv[4])
+			host.restore(path, argv[2])
 		else:
 			usage()
 
