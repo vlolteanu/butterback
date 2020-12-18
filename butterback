@@ -47,11 +47,11 @@ class Host:
 	def list(self, root, name):
 		self.run(['ls', '-1', root + '/' + name])
 	
-	def restore(self, root, name, revision, destination):
-		if (not self.is_dir(destination)):
-			self.run(['mkdir', '-p', destination])
+	def restore(self, root, name, revision, dest):
+		if (not self.is_dir(dest)):
+			self.run(['mkdir', '-p', dest])
 		source = self.rsync_pref() + root + '/' + name + '/' + revision
-		exec(['rsync',  '-a', '--delete', '--progress', source, destination])
+		exec(['rsync',  '-a', '--delete', '--progress', source, dest])
 		
 class LocalHost(Host):
 	def run(self, cmd):
