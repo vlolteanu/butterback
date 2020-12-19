@@ -10,6 +10,7 @@
 import os
 import sys
 import subprocess
+import enum
 
 CONFIG_PATH = '/etc/butterback/'
 ROOT_PATH   = CONFIG_PATH + 'root'
@@ -18,7 +19,7 @@ DATE_FMT    = "%Y-%m-%d-%T"
 
 def exec(cmd):
 	print(cmd)
-	subprocess.run(cmd, check = True)
+	#subprocess.run(cmd, check = True)
 
 def get_oneline_output(cmd):
 	raw_out = subprocess.check_output(cmd)
@@ -50,7 +51,7 @@ class Host:
 		exec(['rsync',  '-a', '--delete', '--progress', source, dest])
 	
 	def list(self, path):
--		self.run(['ls', '-1', path])
+		self.run(['ls', '-1', path])
 		
 class LocalHost(Host):
 	def run(self, cmd):
@@ -154,34 +155,86 @@ def usage(rc = 1):
 	print('\t' + 'help')
 	
 	sys.exit(rc)
-	
 
 def main(argv):
 	if (len(argv) == 0):
 		usage()
-	elif (len(argv) == 1):
-		if (argv[0] == 'auto'):
-			[host, root] = parse_root_file(ROOT_PATH)
-			
-			for i in os.listdir(TARGET_PATH):
-				host.backup(TARGET_PATH + i, root + '/' + i)
-		elif (argv[0] == 'help'):
-			usage(0)
-		else:
+	
+	if (argv[0] == 'backup'):
+		if (len(argv) != 3):
 			usage()
+		
+		src = argv[1]
+		[host, dest] = separate_host(argv[2])
+		
+		host.backup(src, dest)
+	elif (argv[0] == 'restore'):
+		if (len(argv) != 3):
+			usage()
+		
+		[host, source] = separate_host(argv[1])
+		dest = argv[2]
+		
+		host.restore(source, dest)
+	elif (argv[0] == 'list'):
+		if (len(argv) != 2):
+			usage()
+		
+		[host, path] = separate_host(argv[1])
+		
+		host.list(path)
+	elif (argv[0] == 'backup-target'):
+		if (len(argv) != 2):
+			usage()
+		
+		[host, root] = parse_root_file(ROOT_PATH)
+		target = argv[1]
+		
+		host.backup(TARGET_PATH + '/' + target, root + '/' + target)
+	elif (argv[0] == 'restore-target'):
+		if (len(argv) != 2):
+			usage()
+		
+		[host, root] = parse_root_file(ROOT_PATH)
+		target = argv[1]
+		
+		host.restore(root + '/' + target + '/current', TARGET_PATH + '/' + target)
+	elif (argv[0] == 'list-targets'):
+		if (len(argv) != 1):
+			usage()
+		
+		exec(['ls', '-l', TARGET_PATH])
+	elif (argv[0] == 'list-revisions'):
+		if (len(argv) != 2):
+			usage()
+		
+		[host, root] = parse_root_file(ROOT_PATH)
+		target = argv[1]
+		
+		host.list(root + '/' + target)
+	if (argv[0] == 'backup-all'):
+		if (len(argv) != 1):
+			usage()
+		
+		[host, root] = parse_root_file(ROOT_PATH)
+		
+		for i in os.listdir(TARGET_PATH):
+			host.backup(TARGET_PATH + '/' + i, root + '/' + i)
+	elif (argv[0] == 'restore-all'):
+		if (len(argv) != 3):
+			usage()
+		
+		[host, root] = parse_root_file(ROOT_PATH)
+		
+		for i in os.listdir(TARGET_PATH):
+			host.restore(root + '/' + target + '/current', TARGET_PATH + '/' + i)
+	elif (argv[0] == 'help'):
+		if (len(argv) != 1):
+			usage()
+		usage(0)
 	else:
-		if (argv[0] == 'backup'):
-			if (len(argv) != 3):
-				usage()
-			[host, dest] = separate_host(argv[2])
-			host.backup(argv[1], dest)
-		elif (argv[0] == 'restore'):
-			if (len(argv) != 3):
-				usage()
-			[host, source] = separate_host(argv[1])
-			host.restore(source, argv[2])
-		else:
-			usage()
+		usage()
+
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
