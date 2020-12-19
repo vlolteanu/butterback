@@ -48,6 +48,9 @@ class Host:
 		if (not self.is_dir(dest)):
 			self.run(['mkdir', '-p', dest])
 		exec(['rsync',  '-a', '--delete', '--progress', source, dest])
+	
+	def list(self, path):
+-		self.run(['ls', '-1', path])
 		
 class LocalHost(Host):
 	def run(self, cmd):
@@ -139,13 +142,20 @@ def parse_root_file(path):
 
 def usage(rc = 1):
 	print('Usage: butterback <command> <command args>')
-	print('\t' + 'backup <source> <destination> ')
+	print('\t' + 'backup <source> <destination>')
 	print('\t' + 'restore <source> <destination>')
-	print('\t' + 'auto')
+	print('\t' + 'list <path>')
+	print('\t' + 'backup-target <target>')
+	print('\t' + 'restore-target <target> <revision>')
+	print('\t' + 'list-targets')
+	print('\t' + 'list-revisions <target>')
+	print('\t' + 'backup-all')
+	print('\t' + 'restore-all')
 	print('\t' + 'help')
 	
 	sys.exit(rc)
 	
+
 def main(argv):
 	if (len(argv) == 0):
 		usage()
