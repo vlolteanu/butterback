@@ -231,6 +231,7 @@ def main(argv):
 	elif (argv[0] == 'help'):
 		if (len(argv) != 1):
 			usage()
+		
 		usage(0)
 	else:
 		usage()
