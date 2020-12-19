@@ -19,7 +19,7 @@ DATE_FMT    = "%Y-%m-%d-%T"
 
 def exec(cmd):
 	print(cmd)
-	#subprocess.run(cmd, check = True)
+	subprocess.run(cmd, check = True)
 
 def get_oneline_output(cmd):
 	raw_out = subprocess.check_output(cmd)
