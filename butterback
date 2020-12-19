@@ -221,13 +221,13 @@ def main(argv):
 		for i in os.listdir(TARGET_PATH):
 			host.backup(TARGET_PATH + '/' + i, root + '/' + i)
 	elif (argv[0] == 'restore-all'):
-		if (len(argv) != 3):
+		if (len(argv) != 1):
 			usage()
 		
 		[host, root] = parse_root_file(ROOT_PATH)
 		
 		for i in os.listdir(TARGET_PATH):
-			host.restore(root + '/' + target + '/current', TARGET_PATH + '/' + i)
+			host.restore(root + '/' + i + '/current', TARGET_PATH + '/' + i)
 	elif (argv[0] == 'help'):
 		if (len(argv) != 1):
 			usage()
