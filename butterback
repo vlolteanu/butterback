@@ -212,7 +212,7 @@ def main(argv):
 		target = argv[1]
 		
 		host.list(root + '/' + target)
-	if (argv[0] == 'backup-all'):
+	elif (argv[0] == 'backup-all'):
 		if (len(argv) != 1):
 			usage()
 		
