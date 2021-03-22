@@ -40,7 +40,7 @@ class Host:
 			self.run_root(['btrfs', 'subvolume', 'create', current_path])
 			self.run_root(['chown', self.get_user(), current_path])
 		
-		exec(['rsync',  '-a',  '--delete',  '--progress', source, self.rsync_pref() + current_path])
+		exec(['rsync',  '-a',  '--delete',  '--progress', source + '/', self.rsync_pref() + current_path])
 	
 		snap_path = dest + '/' + date()
 		self.run_root(['btrfs', 'subvolume', 'snapshot', current_path, snap_path])
